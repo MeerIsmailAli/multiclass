@@ -1,0 +1,68 @@
+import tensorflow as tf
+from tensorflow.keras import layers, models
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+def load_data(directory, img_height, img_width, batch_size):
+    # Define data generator for training data with augmentation
+    train_datagen = ImageDataGenerator(
+        rescale=1./255,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True,
+        validation_split=0.2,  # Split the data into training and validation sets
+    )
+
+    # Define data generator for test data without augmentation
+    test_datagen = ImageDataGenerator(rescale=1./255)
+
+    # Load and augment training data
+    train_generator = train_datagen.flow_from_directory(
+        directory,
+        target_size=(img_height, img_width),
+        batch_size=batch_size,
+        class_mode='sparse',
+        subset='training'  # for multi-class classification
+    )
+
+    # Load test data (without augmentation)
+    test_generator = test_datagen.flow_from_directory(
+        directory,
+        target_size=(img_height, img_width),
+        batch_size=batch_size,
+        class_mode='sparse',
+        subset='validation'  # for multi-class classification
+    )
+
+    return train_generator, test_generator
+train_data, test_data = load_data(r"C:\Users\User\Desktop\test-dataset",50,50,2)
+
+# Step 2: Define the CNN architecture
+model = models.Sequential([
+    layers.Conv2D(32, (3, 3), activation='relu', input_shape=(50, 50, 3)),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(128, (3, 3), activation='relu'),
+    layers.MaxPooling2D((2, 2)),
+    layers.Flatten(),
+    layers.Dense(128, activation='relu'),
+    layers.Dense(5, activation='softmax')
+])
+
+# Step 3: Compile the model
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+model.fit(train_data,
+          steps_per_epoch=2,
+          epochs=10,
+          validation_data=test_data)
+
+# Step 5: Evaluate the model
+test_loss, test_accuracy = model.evaluate(test_data)
+
+# Step 6: Make predictions
+predictions = model.predict(test_data)
+
+# Step 7: Deploy the model
+# Save the model for future use
+model.save('logo_classification_model.h5')
