@@ -6,14 +6,17 @@ import tensorflow as tf
 model = tf.keras.models.load_model('logo_classification_model.keras')
 
 # Assuming class1 and class2 are the class names (update with actual class names)
-class_indices = {'class1': 0, 'class2': 1, 'class3': 2, 'class4': 3, 'class5': 4}  # Example class indices
+class_indices = {'class1': 0, 'class2': 1}  # Example class indices
 
 # Define image size (replace with the values used during training)
 img_height = 50
 img_width = 50
 
+
+
+
 # Load and preprocess the image
-image_path = '/home/meer/Desktop/multiclass/multiclass/new_data/1200px-Mercedes_Benz_Logo_11.jpg'  # Replace with your image path
+image_path = '/home/meer/Desktop/multiclass/multiclass/new_data/ChatGPT-Logo.png'  # Replace with your image path
 img = load_img(image_path, target_size=(img_height, img_width))
 x = img_to_array(img)
 x = np.expand_dims(x, axis=0)  # Add batch dimension

@@ -5,7 +5,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.applications import VGG16
 
 # Define function to load data with heavy augmentation
-def load_data(directory, img_height, img_width, batch_size):
+def load_data(base_directory, img_height, img_width, batch_size):
     train_datagen = ImageDataGenerator(
         rescale=1./255,
         shear_range=0.3,
@@ -14,30 +14,31 @@ def load_data(directory, img_height, img_width, batch_size):
         width_shift_range=0.2,
         height_shift_range=0.2,
         horizontal_flip=True,
-        fill_mode='nearest',
-        validation_split=0.2,
+        fill_mode='nearest'
     )
 
     test_datagen = ImageDataGenerator(rescale=1./255)
 
     train_generator = train_datagen.flow_from_directory(
-        directory,
+        os.path.join(base_directory, 'train'),
         target_size=(img_height, img_width),
         batch_size=batch_size,
-        class_mode='sparse',
-        subset='training'
+        class_mode='sparse'
     )
 
-    validation_generator = train_datagen.flow_from_directory(
-        directory,
+    validation_generator = test_datagen.flow_from_directory(
+        os.path.join(base_directory, 'validation'),
         target_size=(img_height, img_width),
         batch_size=batch_size,
-        class_mode='sparse',
-        subset='validation'
+        class_mode='sparse'
     )
 
-    train_samples = train_generator.samples  # Get the number of training samples
-    class_indices = train_generator.class_indices  # Get the class indices
+    test_generator = test_datagen.flow_from_directory(
+        os.path.join(base_directory, 'test'),
+        target_size=(img_height, img_width),
+        batch_size=batch_size,
+        class_mode='sparse'
+    )
 
     train_dataset = tf.data.Dataset.from_generator(
         lambda: train_generator,
@@ -55,12 +56,23 @@ def load_data(directory, img_height, img_width, batch_size):
         )
     )
 
-    return train_dataset, validation_dataset, train_samples, validation_generator.samples, class_indices
+    test_dataset = tf.data.Dataset.from_generator(
+        lambda: test_generator,
+        output_signature=(
+            tf.TensorSpec(shape=(None, img_height, img_width, 3), dtype=tf.float32),
+            tf.TensorSpec(shape=(None,), dtype=tf.int32)
+        )
+    )
+
+    return train_dataset, validation_dataset, test_dataset, train_generator.samples, validation_generator.samples, test_generator.samples, train_generator.class_indices
 
 # Load data
 data_dir = "/home/meer/Desktop/multiclass/multiclass/dataset"
 img_height, img_width, batch_size = 50, 50, 2
-train_dataset, validation_dataset, train_samples, val_samples, class_indices = load_data(data_dir, img_height, img_width, batch_size)
+train_dataset, validation_dataset, test_dataset, train_samples, val_samples, test_samples, class_indices = load_data(data_dir, img_height, img_width, batch_size)
+
+print("Class indices:", class_indices)
+
 
 # Debug prints to ensure data generators are working
 print(f"Number of training samples: {train_samples}")
